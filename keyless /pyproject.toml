@@ -34,3 +34,6 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-ra --strict-markers --strict-config"
 filterwarnings = ["error::DeprecationWarning:kmcs.*"]
+markers = [
+    "integration: requires a real external tool (compiler, fuzzer, debugger)",
+]
