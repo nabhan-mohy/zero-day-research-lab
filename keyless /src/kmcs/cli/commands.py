@@ -1192,3 +1192,56 @@ def _cmd_finding_deduplicate(ctx, args, output) -> int:
         output.json(
             {"command": "finding.deduplicate", "ok": True, **result.to_dict()}
         )
+        return ExitCode.OK
+
+    output.success(
+        f"Rebuilt findings for campaign {args.campaign_id[:8]}: "
+        f"{result.total_crashes} crashes → "
+        f"{result.total_groups} groups → "
+        f"{len(result.findings)} findings"
+    )
+    return ExitCode.OK
+
+
+# --- report -------------------------------------------------------------------
+
+
+def _cmd_report_generate(ctx, args, output) -> int:
+    section = (
+        ReportSection.findings_only()
+        if args.findings_only
+        else ReportSection()
+    )
+
+    rendered, written = ctx.reports.generate(
+        args.report_format,
+        output_dir=None if args.stdout else args.output_dir,
+        filename=args.filename,
+        title=args.title,
+        campaign_id=args.campaign,
+        finding_ids=args.findings,
+        section=section,
+    )
+
+    if output.json_mode:
+        payload = {
+            "command": "report.generate",
+            "ok": True,
+            "rendered": rendered.to_dict(),
+            "written_path": str(written) if written else None,
+        }
+        output.json(payload)
+        return ExitCode.OK
+
+    if args.stdout or written is None:
+        # Print the report to stdout; no other framing.
+        output.stdout.write(rendered.content)
+        if not rendered.content.endswith("\n"):
+            output.stdout.write("\n")
+        return ExitCode.OK
+
+    output.success(
+        f"Wrote {rendered.format.value} report "
+        f"({rendered.size_bytes} bytes) to {written}"
+    )
+    return ExitCode.OK
