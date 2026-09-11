@@ -171,6 +171,22 @@ class TestMultipleReports:
         assert result.source_report_index == 0
 
 
+class TestCompoundErrorTypes:
+    def test_attempting_free_is_invalid_free(self) -> None:
+        import pathlib
+        text = pathlib.Path(
+            __file__
+        ).parent.joinpath("fixtures/sanitizer_output/asan_invalid_free.txt").read_text()
+        from kmcs.analysis.crash_parser import parse_crash
+        report = parse_crash(stderr=text)
+        assert report.primary_report is not None
+        assert report.primary_report.error_type == (
+            "attempting free on address which was not malloc()-ed"
+        )
+        result = CrashClassifier().classify(report)
+        assert result.classification is CrashClassification.INVALID_FREE
+
+
 class TestSignalOnly:
     def test_sigsegv_is_segmentation_fault(self) -> None:
         report = CrashReport(signal_number=11, signal_name="SIGSEGV")
